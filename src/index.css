@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* ── Design tokens extracted from the BilleteraDigital mockups ───────────────
+   Brand green:   #1A7A4A  (dark teal-green used for primary buttons & card bg)
+   Accent green:  #22C55E  (positive amounts / success states)
+   Danger red:    #EF4444  (negative amounts / error states)
+   Neutral bg:    #F5F5F5  (app background — off-white)
+   Surface:       #FFFFFF  (cards, sheets)
+   Text primary:  #111827
+   Text muted:    #6B7280
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --color-brand:          #1A7A4A;
+  --color-brand-dark:     #145E38;
+  --color-brand-light:    #D1FAE5;
+  --color-success:        #22C55E;
+  --color-danger:         #EF4444;
+  --color-bg:             #F5F5F5;
+  --color-surface:        #FFFFFF;
+  --color-text-primary:   #111827;
+  --color-text-muted:     #6B7280;
+  --color-border:         #E5E7EB;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Mobile-first max content width — mirrors the ~390px mockup viewport */
+  --max-w-app: 430px;
+}
+
+/* ── Base resets ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── App shell — centre the mobile viewport on wide screens ─────────────── */
+#root {
+  display: flex;
+  justify-content: center;
+  background-color: var(--color-bg);
+}
