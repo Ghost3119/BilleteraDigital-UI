@@ -1,9 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ACCESS_TOKEN_KEY } from './config/axiosClient';
+import AppLayout from './layouts/AppLayout';
+import LoginPage from './features/auth/pages/LoginPage';
+import RegisterPage from './features/auth/pages/RegisterPage';
+import DashboardPage from './features/cuentas/pages/DashboardPage';
+import TransferirPage from './features/transacciones/pages/TransferirPage';
+import HistorialPage from './features/transacciones/pages/HistorialPage';
+import PerfilPage from './features/perfil/pages/PerfilPage';
 
-// ── Lazy page stubs ───────────────────────────────────────────────────────────
-// Pages will be implemented in subsequent tasks.
-// Using inline components here keeps the router working without them.
+// ── Placeholder stubs — used only for routes not yet implemented ──────────────
 
 const Placeholder = ({ name }: { name: string }) => (
   <div className="flex items-center justify-center h-screen text-gray-400 text-sm">
@@ -25,27 +30,31 @@ const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────────────
   {
     path: '/login',
-    element: <Placeholder name="LoginPage" />,
+    element: <LoginPage />,
   },
   {
     path: '/registro',
-    element: <Placeholder name="RegistroPage" />,
+    element: <RegisterPage />,
+  },
+  {
+    path: '/recuperar-contrasena',
+    element: <Placeholder name="RecuperarContrasenaPage" />,
   },
 
-  // ── Protected shell (TabBar layout) ─────────────────────────────────────
+  // ── Protected shell (AppLayout with TabBar) ──────────────────────────────
   {
     path: '/',
     element: (
       <RequireAuth>
-        <Placeholder name="AppLayout (TabBar)" />
+        <AppLayout />
       </RequireAuth>
     ),
     children: [
       { index: true, element: <Navigate to="/inicio" replace /> },
-      { path: 'inicio',       element: <Placeholder name="DashboardPage" /> },
-      { path: 'transferir',   element: <Placeholder name="TransferirPage" /> },
-      { path: 'historial',    element: <Placeholder name="HistorialPage" /> },
-      { path: 'perfil',       element: <Placeholder name="PerfilPage" /> },
+      { path: 'inicio',     element: <DashboardPage /> },
+      { path: 'transferir', element: <TransferirPage /> },
+      { path: 'historial',  element: <HistorialPage /> },
+      { path: 'perfil',     element: <PerfilPage /> },
     ],
   },
 
