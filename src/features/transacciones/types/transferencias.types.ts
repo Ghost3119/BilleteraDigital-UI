@@ -5,7 +5,8 @@
 
 export interface RealizarTransferenciaRequest {
   cuentaOrigenId: string;
-  cuentaDestinoId: string;
+  /** Email address or account number (long) of the recipient. */
+  destinatario: string;
   monto: number;
   descripcion: string;
 }

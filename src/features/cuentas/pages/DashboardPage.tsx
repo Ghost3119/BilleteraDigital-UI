@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useSaldo, useCrearCuenta } from '../../cuentas/hooks/useCuenta';
-import { CUENTA_ID_KEY } from '../../../config/axiosClient';
+import { useMisCuentas, useCrearCuenta } from '../../cuentas/hooks/useCuenta';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -182,13 +181,15 @@ function NoAccount() {
 // ── DashboardPage ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const hasCuenta = !!localStorage.getItem(CUENTA_ID_KEY);
-  const { data: saldo, isLoading, isError } = useSaldo();
+  const { data: cuentas, isLoading, isError } = useMisCuentas();
 
-  if (!hasCuenta) {
+  const cuenta = cuentas?.[0];
+  const hasCuenta = !isLoading && !!cuenta;
+  const noAccount = !isLoading && (!cuentas || cuentas.length === 0);
+
+  if (noAccount) {
     return (
       <div className="pb-8">
-        {/* Header */}
         <div className="px-4 pt-8 pb-2">
           <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
           <h1 className="text-xl font-bold text-gray-900 mt-0.5">Bienvenido</h1>
@@ -205,7 +206,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
           <h1 className="text-xl font-bold text-gray-900 mt-0.5">
-            {isLoading ? 'Cargando…' : saldo?.nombreTitular ?? 'Mi cuenta'}
+            {isLoading ? 'Cargando…' : cuenta?.nombreTitular ?? 'Mi cuenta'}
           </h1>
         </div>
         {/* Notification bell placeholder */}
@@ -218,13 +219,13 @@ export default function DashboardPage() {
 
       {isError ? (
         <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-sm text-red-600">No se pudo cargar el saldo. Verifica tu conexión.</p>
+          <p className="text-sm text-red-600">No se pudo cargar la cuenta. Verifica tu conexión.</p>
         </div>
       ) : (
         <BalanceCard
-          saldo={saldo?.saldo ?? 0}
-          numeroCuenta={saldo?.numeroCuenta ?? 0}
-          nombreTitular={saldo?.nombreTitular ?? ''}
+          saldo={hasCuenta ? cuenta!.saldo : 0}
+          numeroCuenta={hasCuenta ? cuenta!.numeroCuenta : 0}
+          nombreTitular={hasCuenta ? cuenta!.nombreTitular : ''}
           isLoading={isLoading}
         />
       )}

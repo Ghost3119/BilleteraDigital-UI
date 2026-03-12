@@ -3,6 +3,15 @@ import type { CuentaResponse, SaldoResponse, TransaccionDto } from '../types/cue
 import type { PagedResponse } from '../../../types/api.types';
 
 /**
+ * Devuelve todas las cuentas del usuario autenticado.
+ * GET /api/v1/Cuentas/mias
+ */
+export async function getMisCuentas(): Promise<CuentaResponse[]> {
+  const res = await apiClient.get<CuentaResponse[]>('/Cuentas/mias');
+  return res.data;
+}
+
+/**
  * Crea una nueva cuenta para el usuario autenticado.
  * POST /api/v1/Cuentas
  */

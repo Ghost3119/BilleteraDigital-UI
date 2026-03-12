@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransferencia } from '../../transacciones/hooks/useTransferencia';
-import { CUENTA_ID_KEY } from '../../../config/axiosClient';
+import { useMisCuentas } from '../../cuentas/hooks/useCuenta';
 import type { AxiosError } from 'axios';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -56,35 +56,35 @@ function StepIndicator({ step }: { step: Step }) {
 
 export default function TransferirPage() {
   const navigate = useNavigate();
-  const cuentaOrigenId = localStorage.getItem(CUENTA_ID_KEY) ?? '';
+  const { data: cuentas } = useMisCuentas();
+  const cuentaOrigenId = cuentas?.[0]?.id ?? '';
 
   const [step, setStep] = useState<Step>('destinatario');
 
   // Form fields
-  const [cuentaDestinoId, setCuentaDestinoId] = useState('');
-  const [monto, setMonto]                     = useState('');
-  const [descripcion, setDescripcion]         = useState('');
+  const [destinatario, setDestinatario] = useState('');
+  const [monto, setMonto]               = useState('');
+  const [descripcion, setDescripcion]   = useState('');
 
   // Field errors
-  const [destinoError, setDestinoError]  = useState('');
-  const [montoError, setMontoError]      = useState('');
+  const [destinoError, setDestinoError] = useState('');
+  const [montoError, setMontoError]     = useState('');
 
   const { mutate: transferir, isPending, isError, error, reset, data: resultado } = useTransferencia();
 
   // ── Validations ─────────────────────────────────────────────────────────────
 
   function validateDestino(): boolean {
-    if (!cuentaDestinoId.trim()) {
-      setDestinoError('El ID de cuenta destino es obligatorio.');
+    const value = destinatario.trim();
+    if (!value) {
+      setDestinoError('El destinatario es obligatorio.');
       return false;
     }
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(cuentaDestinoId.trim())) {
-      setDestinoError('Ingresa un ID de cuenta válido (formato UUID).');
-      return false;
-    }
-    if (cuentaDestinoId.trim().toLowerCase() === cuentaOrigenId.toLowerCase()) {
-      setDestinoError('No puedes transferirte a ti mismo.');
+    // Accept: email (contains @) or numeric account number
+    const isEmail   = value.includes('@');
+    const isNumeric = /^\d+$/.test(value);
+    if (!isEmail && !isNumeric) {
+      setDestinoError('Ingresa un email o número de cuenta válido.');
       return false;
     }
     setDestinoError('');
@@ -120,7 +120,7 @@ export default function TransferirPage() {
     transferir(
       {
         cuentaOrigenId,
-        cuentaDestinoId: cuentaDestinoId.trim(),
+        destinatario: destinatario.trim(),
         monto: parseFloat(monto),
         descripcion: descripcion.trim() || 'Transferencia',
       },
@@ -159,7 +159,7 @@ export default function TransferirPage() {
         </button>
         <button
           onClick={() => {
-            setCuentaDestinoId('');
+            setDestinatario('');
             setMonto('');
             setDescripcion('');
             reset();
@@ -191,17 +191,17 @@ export default function TransferirPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
             <div>
               <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién transferís?</p>
-              <p className="text-xs text-gray-400">Ingresa el ID de la cuenta destino</p>
+              <p className="text-xs text-gray-400">Ingresa el email o número de cuenta del destinatario</p>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600 font-medium">ID de cuenta destino</label>
+              <label className="text-sm text-gray-600 font-medium">Email o número de cuenta</label>
               <input
                 type="text"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                value={cuentaDestinoId}
-                onChange={(e) => { setCuentaDestinoId(e.target.value); if (destinoError) setDestinoError(''); }}
+                placeholder="usuario@email.com o 1234567890"
+                value={destinatario}
+                onChange={(e) => { setDestinatario(e.target.value); if (destinoError) setDestinoError(''); }}
                 className={[
-                  'w-full px-4 py-3 rounded-lg border text-sm text-gray-800 font-mono',
+                  'w-full px-4 py-3 rounded-lg border text-sm text-gray-800',
                   'placeholder:text-gray-400 bg-white outline-none transition-colors',
                   destinoError
                     ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
@@ -224,7 +224,7 @@ export default function TransferirPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
             <div>
               <p className="text-base font-semibold text-gray-800 mb-0.5">¿Cuánto querés enviar?</p>
-              <p className="text-xs text-gray-400 font-mono truncate">→ {cuentaDestinoId}</p>
+              <p className="text-xs text-gray-400 truncate">→ {destinatario}</p>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-sm text-gray-600 font-medium">Monto (ARS)</label>
@@ -285,7 +285,7 @@ export default function TransferirPage() {
             {/* Summary rows */}
             <div className="flex flex-col gap-3 bg-gray-50 rounded-xl p-4">
               {[
-                { label: 'Destinatario', value: cuentaDestinoId, mono: true },
+                { label: 'Destinatario', value: destinatario, mono: false },
                 {
                   label: 'Monto',
                   value: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(monto)),
