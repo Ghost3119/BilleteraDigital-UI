@@ -3,16 +3,17 @@ import { Link } from 'react-router-dom';
 import { useRegister } from '../hooks/useRegister';
 import InputField from '../../../components/ui/InputField';
 import PasswordInput from '../../../components/ui/PasswordInput';
+import Button from '../../../components/ui/Button';
+import AlertBanner from '../../../components/ui/AlertBanner';
+import { parseApiError } from '../../../utils/parseApiError';
 import type { AxiosError } from 'axios';
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// ── Helper — auth-specific fallback ──────────────────────────────────────────
 
-function parseApiError(error: unknown): string {
-  const axiosErr = error as AxiosError<{ error?: string; title?: string; errors?: Record<string, string[]> }>;
-  if (axiosErr?.response?.data?.error) return axiosErr.response.data.error;
-  if (axiosErr?.response?.data?.title) return axiosErr.response.data.title;
+function parseRegisterError(error: unknown): string {
+  const axiosErr = error as AxiosError;
   if (axiosErr?.response?.status === 409) return 'Este correo ya está registrado.';
-  return 'Ocurrió un error. Intenta de nuevo.';
+  return parseApiError(error);
 }
 
 // ── Logo (shared look with LoginForm) ─────────────────────────────────────────
@@ -109,14 +110,7 @@ export default function RegisterForm() {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
 
         {/* ── API error banner ─────────────────────────────────────────────── */}
-        {isError && (
-          <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm text-red-700">{parseApiError(error)}</p>
-          </div>
-        )}
+        {isError && <AlertBanner variant="error" message={parseRegisterError(error)} />}
 
         {/* ── Nombre ─────────────────────────────────────────────────────────── */}
         <InputField
@@ -166,29 +160,15 @@ export default function RegisterForm() {
         />
 
         {/* ── CTA ─────────────────────────────────────────────────────────────── */}
-        <button
+        <Button
           type="submit"
-          disabled={isPending}
-          className={[
-            'w-full py-3.5 rounded-xl text-white text-sm font-bold uppercase tracking-widest',
-            'transition-all duration-200 mt-1',
-            isPending
-              ? 'bg-[#1A7A4A]/60 cursor-not-allowed'
-              : 'bg-[#1A7A4A] hover:bg-[#145E38] active:scale-[0.98] shadow-md shadow-[#1A7A4A]/25',
-          ].join(' ')}
+          variant="primary"
+          isLoading={isPending}
+          fullWidth
+          className="mt-1"
         >
-          {isPending ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Creando cuenta…
-            </span>
-          ) : (
-            'Crear Cuenta'
-          )}
-        </button>
+          {isPending ? 'Creando cuenta…' : 'Crear Cuenta'}
+        </Button>
 
         {/* ── Back to login ───────────────────────────────────────────────────── */}
         <p className="text-center text-sm text-gray-500 mt-1">

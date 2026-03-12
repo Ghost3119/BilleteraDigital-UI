@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../hooks/useLogin';
 import InputField from '../../../components/ui/InputField';
 import PasswordInput from '../../../components/ui/PasswordInput';
+import Button from '../../../components/ui/Button';
+import AlertBanner from '../../../components/ui/AlertBanner';
+import { parseApiError } from '../../../utils/parseApiError';
 import type { AxiosError } from 'axios';
 
-// ── Helper — extract a human-readable error message from an Axios error ───────
-function parseApiError(error: unknown): string {
-  const axiosErr = error as AxiosError<{ error?: string; title?: string }>;
-  if (axiosErr?.response?.data?.error) return axiosErr.response.data.error;
-  if (axiosErr?.response?.data?.title) return axiosErr.response.data.title;
+// ── Helper — auth-specific fallback ──────────────────────────────────────────
+
+function parseLoginError(error: unknown): string {
+  const axiosErr = error as AxiosError;
   if (axiosErr?.response?.status === 401) return 'Correo o contraseña incorrectos.';
-  return 'Ocurrió un error. Intenta de nuevo.';
+  return parseApiError(error);
 }
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
@@ -19,7 +21,6 @@ function parseApiError(error: unknown): string {
 function BilleteraLogo() {
   return (
     <div className="flex flex-col items-center gap-3 mb-6">
-      {/* Green circular logo with "$" — matches the mockup's teal-green circle */}
       <div className="w-16 h-16 rounded-full bg-[#1A7A4A] flex items-center justify-center shadow-lg shadow-[#1A7A4A]/30">
         <span className="text-white text-3xl font-bold leading-none">$</span>
       </div>
@@ -31,20 +32,21 @@ function BilleteraLogo() {
   );
 }
 
-// ── Main form component ───────────────────────────────────────────────────────
+// ── LoginForm ─────────────────────────────────────────────────────────────────
 
 export default function LoginForm() {
-  const [email, setEmail]         = useState('');
-  const [password, setPassword]   = useState('');
-  const [remember, setRemember]   = useState(false);
+  const navigate = useNavigate();
 
-  // Inline field-level validation errors
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+
   const [emailError, setEmailError]       = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   const { mutate: doLogin, isPending, isError, error } = useLogin();
 
-  // ── Client-side validation ────────────────────────────────────────────────
+  // ── Validation ──────────────────────────────────────────────────────────────
 
   function validate(): boolean {
     let valid = true;
@@ -72,7 +74,7 @@ export default function LoginForm() {
     return valid;
   }
 
-  // ── Submit handler ────────────────────────────────────────────────────────
+  // ── Submit ───────────────────────────────────────────────────────────────────
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -86,17 +88,9 @@ export default function LoginForm() {
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
 
-        {/* ── API error banner ───────────────────────────────────────────── */}
-        {isError && (
-          <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm text-red-700">{parseApiError(error)}</p>
-          </div>
-        )}
+        {/* API error banner */}
+        {isError && <AlertBanner variant="error" message={parseLoginError(error)} />}
 
-        {/* ── Email field ────────────────────────────────────────────────── */}
         <InputField
           label="Correo electrónico"
           type="email"
@@ -109,7 +103,6 @@ export default function LoginForm() {
           disabled={isPending}
         />
 
-        {/* ── Password field ─────────────────────────────────────────────── */}
         <PasswordInput
           label="Contraseña"
           placeholder="••••••••"
@@ -120,7 +113,7 @@ export default function LoginForm() {
           disabled={isPending}
         />
 
-        {/* ── Recordarme + Olvidé contraseña row ────────────────────────── */}
+        {/* Recordarme + Olvidé contraseña */}
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
@@ -139,50 +132,33 @@ export default function LoginForm() {
           </Link>
         </div>
 
-        {/* ── Primary CTA — INICIAR SESIÓN ──────────────────────────────── */}
-        <button
+        {/* Primary CTA */}
+        <Button
           type="submit"
-          disabled={isPending}
-          className={[
-            'w-full py-3.5 rounded-xl text-white text-sm font-bold uppercase tracking-widest',
-            'transition-all duration-200 mt-1',
-            isPending
-              ? 'bg-[#1A7A4A]/60 cursor-not-allowed'
-              : 'bg-[#1A7A4A] hover:bg-[#145E38] active:scale-[0.98] shadow-md shadow-[#1A7A4A]/25',
-          ].join(' ')}
+          variant="primary"
+          isLoading={isPending}
+          fullWidth
+          className="mt-1"
         >
-          {isPending ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Iniciando sesión…
-            </span>
-          ) : (
-            'Iniciar Sesión'
-          )}
-        </button>
+          {isPending ? 'Iniciando sesión…' : 'Iniciar Sesión'}
+        </Button>
 
-        {/* ── Divider ────────────────────────────────────────────────────── */}
+        {/* Divider */}
         <div className="flex items-center gap-3 my-1">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400">o</span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        {/* ── Secondary CTA — CREAR CUENTA NUEVA ───────────────────────── */}
-        <Link
-          to="/registro"
-          className={[
-            'w-full py-3.5 rounded-xl border border-gray-300 text-center',
-            'text-sm font-semibold text-gray-700 uppercase tracking-widest',
-            'hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98]',
-            'transition-all duration-200',
-          ].join(' ')}
+        {/* Secondary CTA */}
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          onClick={() => navigate('/registro')}
         >
           Crear Cuenta Nueva
-        </Link>
+        </Button>
 
       </form>
     </div>

@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMisCuentas, useCrearCuenta } from '../../cuentas/hooks/useCuenta';
+import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
+import type { CuentaResponse } from '../types/cuentas.types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -12,33 +15,90 @@ function formatMoney(amount: number): string {
 }
 
 function formatNumeroCuenta(n: number): string {
-  // Format as: 0000-0000-0000-XXXX
   const s = n.toString().padStart(16, '0');
   return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}-${s.slice(12)}`;
+}
+
+// ── AccountSwitcher ───────────────────────────────────────────────────────────
+
+/**
+ * Horizontal scrollable strip of account pills.
+ * Only visible when the user has 2 or more accounts.
+ */
+function AccountSwitcher({
+  cuentas,
+  activaId,
+  onSelect,
+}: {
+  cuentas: CuentaResponse[];
+  activaId: string;
+  onSelect: (id: string) => void;
+}) {
+  if (cuentas.length <= 1) return null;
+
+  return (
+    <div className="mx-4 mt-4">
+      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+        Mis cuentas
+      </p>
+      <div
+        role="tablist"
+        aria-label="Seleccionar cuenta"
+        className="flex gap-2 overflow-x-auto pb-1 scrollbar-none"
+      >
+        {cuentas.map((c) => {
+          const isActive = c.id === activaId;
+          return (
+            <button
+              key={c.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onSelect(c.id)}
+              className={[
+                'flex-shrink-0 flex flex-col items-start px-3 py-2 rounded-xl border text-left',
+                'transition-all duration-150 text-xs min-w-[130px]',
+                isActive
+                  ? 'bg-[#1A7A4A] border-[#1A7A4A] text-white shadow-md shadow-[#1A7A4A]/20'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-[#1A7A4A]/40',
+              ].join(' ')}
+            >
+              <span className={['font-semibold truncate w-full', isActive ? 'text-white' : 'text-gray-800'].join(' ')}>
+                {c.nombreTitular}
+              </span>
+              <span className={['font-mono mt-0.5', isActive ? 'text-white/80' : 'text-gray-400'].join(' ')}>
+                ···{c.numeroCuenta.toString().slice(-4)}
+              </span>
+              <span className={['mt-1 font-bold', isActive ? 'text-white' : 'text-[#1A7A4A]'].join(' ')}>
+                {formatMoney(c.saldo)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ── BalanceCard ───────────────────────────────────────────────────────────────
 
 function BalanceCard({
-  saldo,
-  numeroCuenta,
-  nombreTitular,
+  cuenta,
   isLoading,
 }: {
-  saldo: number;
-  numeroCuenta: number;
-  nombreTitular: string;
+  cuenta: CuentaResponse | undefined;
   isLoading: boolean;
 }) {
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   return (
-    <div className="mx-4 mt-6 rounded-2xl bg-gradient-to-br from-[#1A7A4A] to-[#145E38] p-5 text-white shadow-lg shadow-[#1A7A4A]/30">
+    <div className="mx-4 mt-4 rounded-2xl bg-gradient-to-br from-[#1A7A4A] to-[#145E38] p-5 text-white shadow-lg shadow-[#1A7A4A]/30">
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-xs text-white/70 uppercase tracking-widest font-medium">Saldo disponible</p>
-          <p className="text-sm font-semibold mt-0.5 truncate max-w-[180px]">{nombreTitular}</p>
+          <p className="text-sm font-semibold mt-0.5 truncate max-w-[180px]">
+            {isLoading ? '…' : cuenta?.nombreTitular ?? ''}
+          </p>
         </div>
         <button
           onClick={() => setBalanceVisible((v) => !v)}
@@ -64,7 +124,7 @@ function BalanceCard({
           <div className="h-10 w-40 bg-white/20 rounded-lg animate-pulse" />
         ) : (
           <p className="text-4xl font-bold tracking-tight">
-            {balanceVisible ? formatMoney(saldo) : '••••••'}
+            {balanceVisible ? formatMoney(cuenta?.saldo ?? 0) : '••••••'}
           </p>
         )}
       </div>
@@ -73,7 +133,7 @@ function BalanceCard({
       <div className="border-t border-white/20 pt-3">
         <p className="text-[11px] text-white/60 uppercase tracking-widest">N° de cuenta</p>
         <p className="text-sm font-mono font-medium mt-0.5 tracking-wider">
-          {isLoading ? '---- ---- ---- ----' : formatNumeroCuenta(numeroCuenta)}
+          {isLoading ? '---- ---- ---- ----' : formatNumeroCuenta(cuenta?.numeroCuenta ?? 0)}
         </p>
       </div>
     </div>
@@ -140,41 +200,29 @@ function NoAccount() {
   const { mutate: crear, isPending, isError } = useCrearCuenta();
 
   return (
-    <div className="mx-4 mt-10 flex flex-col items-center text-center gap-4">
-      <div className="w-20 h-20 rounded-full bg-[#1A7A4A]/10 flex items-center justify-center">
-        <span className="text-4xl font-bold text-[#1A7A4A]">$</span>
-      </div>
-      <div>
-        <p className="text-lg font-bold text-gray-800">Aún no tienes cuenta</p>
-        <p className="text-sm text-gray-500 mt-1">Crea tu cuenta gratuita para empezar a operar.</p>
-      </div>
-      {isError && (
-        <p className="text-xs text-red-500">Error al crear la cuenta. Intenta de nuevo.</p>
-      )}
-      <button
-        onClick={() => crear()}
-        disabled={isPending}
-        className={[
-          'w-full max-w-[260px] py-3.5 rounded-xl text-white text-sm font-bold uppercase tracking-widest',
-          'transition-all duration-200',
-          isPending
-            ? 'bg-[#1A7A4A]/60 cursor-not-allowed'
-            : 'bg-[#1A7A4A] hover:bg-[#145E38] active:scale-[0.98] shadow-md shadow-[#1A7A4A]/25',
-        ].join(' ')}
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-            Creando…
-          </span>
-        ) : (
-          'Crear mi cuenta'
+    <Card className="mx-4 mt-10">
+      <div className="flex flex-col items-center text-center gap-4">
+        <div className="w-20 h-20 rounded-full bg-[#1A7A4A]/10 flex items-center justify-center">
+          <span className="text-4xl font-bold text-[#1A7A4A]">$</span>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-gray-800">Aún no tienes cuenta</p>
+          <p className="text-sm text-gray-500 mt-1">Crea tu cuenta gratuita para empezar a operar.</p>
+        </div>
+        {isError && (
+          <p className="text-xs text-red-500">Error al crear la cuenta. Intenta de nuevo.</p>
         )}
-      </button>
-    </div>
+        <Button
+          variant="primary"
+          isLoading={isPending}
+          fullWidth
+          onClick={() => crear()}
+          className="max-w-[260px]"
+        >
+          {isPending ? 'Creando…' : 'Crear mi cuenta'}
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -183,9 +231,17 @@ function NoAccount() {
 export default function DashboardPage() {
   const { data: cuentas, isLoading, isError } = useMisCuentas();
 
-  const cuenta = cuentas?.[0];
-  const hasCuenta = !isLoading && !!cuenta;
-  const noAccount = !isLoading && (!cuentas || cuentas.length === 0);
+  // Active account id — defaults to the first account once data arrives
+  const [cuentaActivaId, setCuentaActivaId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cuentas && cuentas.length > 0 && cuentaActivaId === null) {
+      setCuentaActivaId(cuentas[0].id);
+    }
+  }, [cuentas, cuentaActivaId]);
+
+  const cuentaActiva = cuentas?.find((c) => c.id === cuentaActivaId);
+  const noAccount    = !isLoading && (!cuentas || cuentas.length === 0);
 
   if (noAccount) {
     return (
@@ -206,7 +262,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
           <h1 className="text-xl font-bold text-gray-900 mt-0.5">
-            {isLoading ? 'Cargando…' : cuenta?.nombreTitular ?? 'Mi cuenta'}
+            {isLoading ? 'Cargando…' : cuentaActiva?.nombreTitular ?? 'Mi cuenta'}
           </h1>
         </div>
         {/* Notification bell placeholder */}
@@ -217,17 +273,21 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Account switcher — only shown when user has 2+ accounts */}
+      {cuentas && cuentaActivaId && (
+        <AccountSwitcher
+          cuentas={cuentas}
+          activaId={cuentaActivaId}
+          onSelect={setCuentaActivaId}
+        />
+      )}
+
       {isError ? (
         <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
           <p className="text-sm text-red-600">No se pudo cargar la cuenta. Verifica tu conexión.</p>
         </div>
       ) : (
-        <BalanceCard
-          saldo={hasCuenta ? cuenta!.saldo : 0}
-          numeroCuenta={hasCuenta ? cuenta!.numeroCuenta : 0}
-          nombreTitular={hasCuenta ? cuenta!.nombreTitular : ''}
-          isLoading={isLoading}
-        />
+        <BalanceCard cuenta={cuentaActiva} isLoading={isLoading} />
       )}
 
       <QuickActions />

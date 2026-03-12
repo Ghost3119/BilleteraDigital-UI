@@ -1,5 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, CUENTA_ID_KEY } from '../../../config/axiosClient';
+import { useMisCuentas } from '../../cuentas/hooks/useCuenta';
+import Card from '../../../components/ui/Card';
+import Button from '../../../components/ui/Button';
+import PageHeader from '../../../components/ui/PageHeader';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -29,14 +33,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default function PerfilPage() {
   const navigate = useNavigate();
+  const { data: cuentas } = useMisCuentas();
 
   const token = localStorage.getItem(ACCESS_TOKEN_KEY) ?? '';
-  const cuentaId = localStorage.getItem(CUENTA_ID_KEY) ?? '';
   const payload = token ? decodeJwtPayload(token) : null;
 
   // ASP.NET Core maps: sub → ClaimTypes.NameIdentifier, unique_name → name, email → email
   const nombre = payload?.['unique_name'] ?? payload?.['name'] ?? '—';
   const email  = payload?.['email'] ?? '—';
+
+  // Use first account from API — no longer rely on CUENTA_ID_KEY for display
+  const cuentaId = cuentas?.[0]?.id ?? '';
 
   function handleLogout() {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -47,11 +54,7 @@ export default function PerfilPage() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="px-4 pt-8 pb-2">
-        <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
-        <h1 className="text-xl font-bold text-gray-900 mt-0.5">Mi perfil</h1>
-      </div>
+      <PageHeader title="Mi perfil" />
 
       {/* Avatar */}
       <div className="flex flex-col items-center mt-6 gap-2">
@@ -65,32 +68,30 @@ export default function PerfilPage() {
       </div>
 
       {/* Info card */}
-      <div className="mx-4 mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm px-5">
+      <Card padding="none" className="mx-4 mt-6 px-5">
         <InfoRow label="Nombre" value={nombre} />
         <InfoRow label="Correo electrónico" value={email} />
         {cuentaId && <InfoRow label="ID de cuenta" value={cuentaId} />}
-      </div>
+      </Card>
 
-      {/* Copy account ID — useful for sharing */}
+      {/* Copy account ID */}
       {cuentaId && (
         <div className="mx-4 mt-3">
-          <button
+          <Button
+            variant="ghost"
+            fullWidth
             onClick={() => navigator.clipboard.writeText(cuentaId)}
-            className="w-full py-3 rounded-xl border border-[#1A7A4A]/30 text-sm font-semibold text-[#1A7A4A] bg-[#1A7A4A]/5 hover:bg-[#1A7A4A]/10 active:scale-[0.98] transition-all"
           >
             Copiar ID de cuenta
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Logout */}
       <div className="mx-4 mt-4">
-        <button
-          onClick={handleLogout}
-          className="w-full py-3.5 rounded-xl bg-[#EF4444] text-white text-sm font-bold uppercase tracking-widest shadow-md shadow-[#EF4444]/25 hover:bg-red-600 active:scale-[0.98] transition-all"
-        >
+        <Button variant="danger" fullWidth onClick={handleLogout}>
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </div>
   );

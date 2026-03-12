@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useHistorial } from '../../cuentas/hooks/useHistorial';
 import type { TransaccionDto } from '../../cuentas/types/cuentas.types';
+import Card from '../../../components/ui/Card';
+import Button from '../../../components/ui/Button';
+import Spinner from '../../../components/ui/Spinner';
+import AlertBanner from '../../../components/ui/AlertBanner';
+import PageHeader from '../../../components/ui/PageHeader';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -62,42 +67,6 @@ function TransaccionRow({ t }: { t: TransaccionDto }) {
   );
 }
 
-// ── Pagination controls ───────────────────────────────────────────────────────
-
-function PaginationBar({
-  page,
-  totalPages,
-  onPrev,
-  onNext,
-}: {
-  page: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <button
-        onClick={onPrev}
-        disabled={page <= 1}
-        className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 disabled:opacity-40 hover:bg-gray-50 active:scale-95 transition-all"
-      >
-        ← Anterior
-      </button>
-      <span className="text-xs text-gray-400">
-        Página {page} de {totalPages}
-      </span>
-      <button
-        onClick={onNext}
-        disabled={page >= totalPages}
-        className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 disabled:opacity-40 hover:bg-gray-50 active:scale-95 transition-all"
-      >
-        Siguiente →
-      </button>
-    </div>
-  );
-}
-
 // ── HistorialPage ─────────────────────────────────────────────────────────────
 
 export default function HistorialPage() {
@@ -112,24 +81,22 @@ export default function HistorialPage() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="px-4 pt-8 pb-2">
-        <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
-        <h1 className="text-xl font-bold text-gray-900 mt-0.5">Historial</h1>
-        {!isLoading && !isError && (
-          <p className="text-xs text-gray-400 mt-1">{totalCount} movimiento{totalCount !== 1 ? 's' : ''}</p>
-        )}
-      </div>
+      <PageHeader
+        title="Historial"
+        action={
+          !isLoading && !isError
+            ? <span className="text-xs text-gray-400">{totalCount} movimiento{totalCount !== 1 ? 's' : ''}</span>
+            : undefined
+        }
+      />
 
       {/* Content */}
       <div className="mx-4 mt-4">
         {isError ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-sm text-red-600">No se pudo cargar el historial. Verifica tu conexión.</p>
-          </div>
+          <AlertBanner variant="error" message="No se pudo cargar el historial. Verifica tu conexión." />
         ) : isLoading ? (
           /* Skeleton */
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+          <Card padding="none" className="divide-y divide-gray-50">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-4 animate-pulse">
                 <div className="w-10 h-10 rounded-full bg-gray-100" />
@@ -140,7 +107,7 @@ export default function HistorialPage() {
                 <div className="w-16 h-3 bg-gray-100 rounded" />
               </div>
             ))}
-          </div>
+          </Card>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -154,23 +121,45 @@ export default function HistorialPage() {
             </div>
           </div>
         ) : (
-          <div className={['bg-white rounded-2xl border border-gray-100 shadow-sm px-4 transition-opacity', isFetching ? 'opacity-60' : ''].join(' ')}>
+          <Card padding="none" className={['px-4 transition-opacity', isFetching ? 'opacity-60' : ''].join(' ')}>
+            {isFetching && (
+              <div className="flex justify-center py-2">
+                <Spinner size="w-4 h-4" />
+              </div>
+            )}
             {items.map((t) => (
               <TransaccionRow key={t.id} t={t} />
             ))}
-          </div>
+          </Card>
         )}
       </div>
 
       {/* Pagination */}
       {!isLoading && !isError && totalPages > 1 && (
-        <div className="mx-4 mt-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <PaginationBar
-            page={page}
-            totalPages={totalPages}
-            onPrev={() => setPage((p) => Math.max(1, p - 1))}
-            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
-          />
+        <div className="mx-4 mt-3">
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <Button
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-4 py-2 text-sm font-medium"
+              >
+                ← Anterior
+              </Button>
+              <span className="text-xs text-gray-400">
+                Página {page} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="px-4 py-2 text-sm font-medium"
+              >
+                Siguiente →
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </div>

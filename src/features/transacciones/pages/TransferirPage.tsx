@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransferencia } from '../../transacciones/hooks/useTransferencia';
 import { useMisCuentas } from '../../cuentas/hooks/useCuenta';
-import type { AxiosError } from 'axios';
+import { parseApiError } from '../../../utils/parseApiError';
+import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
+import InputField from '../../../components/ui/InputField';
+import AlertBanner from '../../../components/ui/AlertBanner';
+import PageHeader from '../../../components/ui/PageHeader';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function parseApiError(error: unknown): string {
-  const axiosErr = error as AxiosError<{ error?: string; title?: string }>;
-  if (axiosErr?.response?.data?.error) return axiosErr.response.data.error;
-  if (axiosErr?.response?.data?.title) return axiosErr.response.data.title;
-  return 'Ocurrió un error. Intenta de nuevo.';
-}
+// ── Step type ─────────────────────────────────────────────────────────────────
 
 type Step = 'destinatario' | 'monto' | 'confirmar' | 'exito';
 
@@ -80,7 +78,6 @@ export default function TransferirPage() {
       setDestinoError('El destinatario es obligatorio.');
       return false;
     }
-    // Accept: email (contains @) or numeric account number
     const isEmail   = value.includes('@');
     const isNumeric = /^\d+$/.test(value);
     if (!isEmail && !isNumeric) {
@@ -151,12 +148,9 @@ export default function TransferirPage() {
             {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(resultado.saldoOrigenResultante)}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/inicio')}
-          className="w-full max-w-[280px] py-3.5 rounded-xl bg-[#1A7A4A] text-white text-sm font-bold uppercase tracking-widest shadow-md shadow-[#1A7A4A]/25 hover:bg-[#145E38] active:scale-[0.98] transition-all"
-        >
+        <Button variant="primary" fullWidth onClick={() => navigate('/inicio')}>
           Volver al inicio
-        </button>
+        </Button>
         <button
           onClick={() => {
             setDestinatario('');
@@ -177,106 +171,72 @@ export default function TransferirPage() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="px-4 pt-8 pb-2">
-        <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
-        <h1 className="text-xl font-bold text-gray-900 mt-0.5">Nueva transferencia</h1>
-      </div>
+      <PageHeader title="Nueva transferencia" />
 
       <StepIndicator step={step} />
 
       <div className="px-4">
         {/* ── Step 1: Destinatario ─────────────────────────────────────────── */}
         {step === 'destinatario' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+          <Card padding="md" className="flex flex-col gap-4">
             <div>
               <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién transferís?</p>
               <p className="text-xs text-gray-400">Ingresa el email o número de cuenta del destinatario</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600 font-medium">Email o número de cuenta</label>
-              <input
-                type="text"
-                placeholder="usuario@email.com o 1234567890"
-                value={destinatario}
-                onChange={(e) => { setDestinatario(e.target.value); if (destinoError) setDestinoError(''); }}
-                className={[
-                  'w-full px-4 py-3 rounded-lg border text-sm text-gray-800',
-                  'placeholder:text-gray-400 bg-white outline-none transition-colors',
-                  destinoError
-                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-                    : 'border-gray-200 focus:border-[#1A7A4A] focus:ring-2 focus:ring-[#1A7A4A]/10',
-                ].join(' ')}
-              />
-              {destinoError && <p className="text-xs text-red-500">{destinoError}</p>}
-            </div>
-            <button
-              onClick={handleNextDestino}
-              className="w-full py-3.5 rounded-xl bg-[#1A7A4A] text-white text-sm font-bold uppercase tracking-widest shadow-md shadow-[#1A7A4A]/25 hover:bg-[#145E38] active:scale-[0.98] transition-all"
-            >
+            <InputField
+              label="Email o número de cuenta"
+              type="text"
+              placeholder="usuario@email.com o 1234567890"
+              value={destinatario}
+              onChange={(e) => { setDestinatario(e.target.value); if (destinoError) setDestinoError(''); }}
+              error={destinoError}
+            />
+            <Button variant="primary" fullWidth onClick={handleNextDestino}>
               Continuar
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         {/* ── Step 2: Monto ────────────────────────────────────────────────── */}
         {step === 'monto' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+          <Card padding="md" className="flex flex-col gap-4">
             <div>
               <p className="text-base font-semibold text-gray-800 mb-0.5">¿Cuánto querés enviar?</p>
               <p className="text-xs text-gray-400 truncate">→ {destinatario}</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600 font-medium">Monto (ARS)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder="0.00"
-                min="0.01"
-                step="0.01"
-                value={monto}
-                onChange={(e) => { setMonto(e.target.value); if (montoError) setMontoError(''); }}
-                className={[
-                  'w-full px-4 py-3 rounded-lg border text-sm text-gray-800',
-                  'placeholder:text-gray-400 bg-white outline-none transition-colors',
-                  montoError
-                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-                    : 'border-gray-200 focus:border-[#1A7A4A] focus:ring-2 focus:ring-[#1A7A4A]/10',
-                ].join(' ')}
-              />
-              {montoError && <p className="text-xs text-red-500">{montoError}</p>}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600 font-medium">Descripción (opcional)</label>
-              <input
-                type="text"
-                placeholder="Ej: Pago alquiler"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                maxLength={100}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 bg-white outline-none focus:border-[#1A7A4A] focus:ring-2 focus:ring-[#1A7A4A]/10 transition-colors"
-              />
-            </div>
+            <InputField
+              label="Monto (ARS)"
+              type="number"
+              inputMode="decimal"
+              placeholder="0.00"
+              min="0.01"
+              step="0.01"
+              value={monto}
+              onChange={(e) => { setMonto(e.target.value); if (montoError) setMontoError(''); }}
+              error={montoError}
+            />
+            <InputField
+              label="Descripción (opcional)"
+              type="text"
+              placeholder="Ej: Pago alquiler"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              maxLength={100}
+            />
             <div className="flex gap-3">
-              <button
-                onClick={() => setStep('destinatario')}
-                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 active:scale-[0.98] transition-all"
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setStep('destinatario')}>
                 Atrás
-              </button>
-              <button
-                onClick={handleNextMonto}
-                className="flex-1 py-3.5 rounded-xl bg-[#1A7A4A] text-white text-sm font-bold uppercase tracking-widest shadow-md shadow-[#1A7A4A]/25 hover:bg-[#145E38] active:scale-[0.98] transition-all"
-              >
+              </Button>
+              <Button variant="primary" className="flex-1" onClick={handleNextMonto}>
                 Continuar
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* ── Step 3: Confirmar ────────────────────────────────────────────── */}
         {step === 'confirmar' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+          <Card padding="md" className="flex flex-col gap-4">
             <div>
               <p className="text-base font-semibold text-gray-800 mb-0.5">Confirmá la transferencia</p>
               <p className="text-xs text-gray-400">Revisá los datos antes de enviar</p>
@@ -285,65 +245,41 @@ export default function TransferirPage() {
             {/* Summary rows */}
             <div className="flex flex-col gap-3 bg-gray-50 rounded-xl p-4">
               {[
-                { label: 'Destinatario', value: destinatario, mono: false },
+                { label: 'Destinatario', value: destinatario },
                 {
                   label: 'Monto',
                   value: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(monto)),
-                  mono: false,
                 },
-                { label: 'Descripción', value: descripcion.trim() || 'Transferencia', mono: false },
+                { label: 'Descripción', value: descripcion.trim() || 'Transferencia' },
               ].map((row) => (
                 <div key={row.label} className="flex flex-col gap-0.5">
                   <span className="text-[10px] text-gray-400 uppercase tracking-widest font-medium">{row.label}</span>
-                  <span className={['text-sm text-gray-800 font-medium break-all', row.mono ? 'font-mono' : ''].join(' ')}>
-                    {row.value}
-                  </span>
+                  <span className="text-sm text-gray-800 font-medium break-all">{row.value}</span>
                 </div>
               ))}
             </div>
 
-            {isError && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <p className="text-sm text-red-700">{parseApiError(error)}</p>
-              </div>
-            )}
+            {isError && <AlertBanner variant="error" message={parseApiError(error)} />}
 
             <div className="flex gap-3">
-              <button
-                onClick={() => setStep('monto')}
+              <Button
+                variant="outline"
+                className="flex-1"
                 disabled={isPending}
-                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-50"
+                onClick={() => setStep('monto')}
               >
                 Atrás
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                isLoading={isPending}
                 onClick={handleConfirmar}
-                disabled={isPending}
-                className={[
-                  'flex-1 py-3.5 rounded-xl text-white text-sm font-bold uppercase tracking-widest',
-                  'transition-all duration-200',
-                  isPending
-                    ? 'bg-[#1A7A4A]/60 cursor-not-allowed'
-                    : 'bg-[#1A7A4A] hover:bg-[#145E38] active:scale-[0.98] shadow-md shadow-[#1A7A4A]/25',
-                ].join(' ')}
               >
-                {isPending ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                    Enviando…
-                  </span>
-                ) : (
-                  'Confirmar'
-                )}
-              </button>
+                {isPending ? 'Enviando…' : 'Confirmar'}
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>
