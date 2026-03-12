@@ -140,12 +140,12 @@ export default function TransferirPage() {
           <p className="text-sm text-gray-500 mt-1">
             Transferiste{' '}
             <span className="font-semibold text-gray-800">
-              {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(resultado.monto)}
+              {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(resultado.monto)}
             </span>
           </p>
           <p className="text-xs text-gray-400 mt-1">
             Saldo restante:{' '}
-            {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(resultado.saldoOrigenResultante)}
+            {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(resultado.saldoOrigenResultante)}
           </p>
         </div>
         <Button variant="primary" fullWidth onClick={() => navigate('/inicio')}>
@@ -180,7 +180,7 @@ export default function TransferirPage() {
         {step === 'destinatario' && (
           <Card padding="md" className="flex flex-col gap-4">
             <div>
-              <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién transferís?</p>
+              <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién deseas transferir?</p>
               <p className="text-xs text-gray-400">Ingresa el email o número de cuenta del destinatario</p>
             </div>
             <InputField
@@ -201,11 +201,11 @@ export default function TransferirPage() {
         {step === 'monto' && (
           <Card padding="md" className="flex flex-col gap-4">
             <div>
-              <p className="text-base font-semibold text-gray-800 mb-0.5">¿Cuánto querés enviar?</p>
+              <p className="text-base font-semibold text-gray-800 mb-0.5">¿Cuánto deseas enviar?</p>
               <p className="text-xs text-gray-400 truncate">→ {destinatario}</p>
             </div>
             <InputField
-              label="Monto (ARS)"
+              label="Monto (MXN)"
               type="number"
               inputMode="decimal"
               placeholder="0.00"
@@ -218,7 +218,7 @@ export default function TransferirPage() {
             <InputField
               label="Descripción (opcional)"
               type="text"
-              placeholder="Ej: Pago alquiler"
+              placeholder="Ej: Pago de renta"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               maxLength={100}
@@ -238,8 +238,8 @@ export default function TransferirPage() {
         {step === 'confirmar' && (
           <Card padding="md" className="flex flex-col gap-4">
             <div>
-              <p className="text-base font-semibold text-gray-800 mb-0.5">Confirmá la transferencia</p>
-              <p className="text-xs text-gray-400">Revisá los datos antes de enviar</p>
+              <p className="text-base font-semibold text-gray-800 mb-0.5">Confirma la transferencia</p>
+              <p className="text-xs text-gray-400">Revisa los datos antes de enviar</p>
             </div>
 
             {/* Summary rows */}
@@ -248,7 +248,7 @@ export default function TransferirPage() {
                 { label: 'Destinatario', value: destinatario },
                 {
                   label: 'Monto',
-                  value: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(monto)),
+                   value: new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(parseFloat(monto)),
                 },
                 { label: 'Descripción', value: descripcion.trim() || 'Transferencia' },
               ].map((row) => (

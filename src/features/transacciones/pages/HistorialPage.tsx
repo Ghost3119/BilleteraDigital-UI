@@ -10,7 +10,7 @@ import PageHeader from '../../../components/ui/PageHeader';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('es-AR', {
+  return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -20,9 +20,9 @@ function formatDate(iso: string): string {
 }
 
 function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'ARS',
+    currency: 'MXN',
     minimumFractionDigits: 2,
   }).format(amount);
 }

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useMisCuentas, useCrearCuenta } from '../../cuentas/hooks/useCuenta';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
+import AlertBanner from '../../../components/ui/AlertBanner';
 import type { CuentaResponse } from '../types/cuentas.types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'ARS',
+    currency: 'MXN',
     minimumFractionDigits: 2,
   }).format(amount);
 }
@@ -37,14 +39,15 @@ function AccountSwitcher({
   if (cuentas.length <= 1) return null;
 
   return (
-    <div className="mx-4 mt-4">
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+    <div className="mt-4">
+      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2 px-4">
         Mis cuentas
       </p>
+      {/* snap-x scroll strip — px-4 so first/last pill have breathing room */}
       <div
         role="tablist"
         aria-label="Seleccionar cuenta"
-        className="flex gap-2 overflow-x-auto pb-1 scrollbar-none"
+        className="w-full flex overflow-x-auto gap-3 px-4 pb-2 snap-x scrollbar-hide"
       >
         {cuentas.map((c) => {
           const isActive = c.id === activaId;
@@ -55,8 +58,8 @@ function AccountSwitcher({
               aria-selected={isActive}
               onClick={() => onSelect(c.id)}
               className={[
-                'flex-shrink-0 flex flex-col items-start px-3 py-2 rounded-xl border text-left',
-                'transition-all duration-150 text-xs min-w-[130px]',
+                'shrink-0 snap-center flex flex-col items-start px-3 py-2.5 rounded-xl border text-left',
+                'transition-all duration-150 text-xs w-[140px]',
                 isActive
                   ? 'bg-[#1A7A4A] border-[#1A7A4A] text-white shadow-md shadow-[#1A7A4A]/20'
                   : 'bg-white border-gray-200 text-gray-700 hover:border-[#1A7A4A]/40',
@@ -178,16 +181,16 @@ function QuickActions() {
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Acciones rápidas</p>
       <div className="grid grid-cols-3 gap-3">
         {actions.map((action) => (
-          <a
+          <Link
             key={action.to}
-            href={action.to}
+            to={action.to}
             className="flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#1A7A4A]/20 active:scale-95 transition-all duration-150"
           >
-            <div className="w-11 h-11 rounded-full bg-[#1A7A4A]/8 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-full bg-[#1A7A4A]/10 flex items-center justify-center">
               {action.icon}
             </div>
             <span className="text-xs font-medium text-gray-700">{action.label}</span>
-          </a>
+          </Link>
         ))}
       </div>
     </div>
@@ -245,7 +248,7 @@ export default function DashboardPage() {
 
   if (noAccount) {
     return (
-      <div className="pb-8">
+      <div className="w-full overflow-x-hidden pb-8">
         <div className="px-4 pt-8 pb-2">
           <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
           <h1 className="text-xl font-bold text-gray-900 mt-0.5">Bienvenido</h1>
@@ -256,24 +259,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="pb-8">
-      {/* Header */}
-      <div className="px-4 pt-8 pb-2 flex items-center justify-between">
-        <div>
+    <div className="w-full overflow-x-hidden pb-8">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div className="w-full px-4 pt-8 pb-2 flex items-center justify-between">
+        <div className="min-w-0 flex-1 mr-3">
           <p className="text-xs text-gray-400 uppercase tracking-widest">Billetera Digital</p>
-          <h1 className="text-xl font-bold text-gray-900 mt-0.5">
+          <h1 className="text-xl font-bold text-gray-900 mt-0.5 truncate">
             {isLoading ? 'Cargando…' : cuentaActiva?.nombreTitular ?? 'Mi cuenta'}
           </h1>
         </div>
-        {/* Notification bell placeholder */}
-        <button className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-400">
+        {/* Notification bell */}
+        <button
+          className="shrink-0 w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-400"
+          aria-label="Notificaciones"
+        >
           <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
         </button>
       </div>
 
-      {/* Account switcher — only shown when user has 2+ accounts */}
+      {/* ── Account switcher ─────────────────────────────────────────────────── */}
       {cuentas && cuentaActivaId && (
         <AccountSwitcher
           cuentas={cuentas}
@@ -282,14 +288,16 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* ── Balance card / error ─────────────────────────────────────────────── */}
       {isError ? (
-        <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-sm text-red-600">No se pudo cargar la cuenta. Verifica tu conexión.</p>
+        <div className="px-4 mt-4">
+          <AlertBanner variant="error" message="No se pudo cargar la cuenta. Verifica tu conexión." />
         </div>
       ) : (
         <BalanceCard cuenta={cuentaActiva} isLoading={isLoading} />
       )}
 
+      {/* ── Quick actions ────────────────────────────────────────────────────── */}
       <QuickActions />
     </div>
   );
