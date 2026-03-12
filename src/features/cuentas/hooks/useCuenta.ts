@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { consultarSaldo, crearCuenta, getMisCuentas } from '../services/cuentasService';
+import type { CuentaResponse } from '../types/cuentas.types';
 
 // ── Query key factory ─────────────────────────────────────────────────────────
 
@@ -11,13 +12,24 @@ export const cuentaKeys = {
 // ── useMisCuentas ─────────────────────────────────────────────────────────────
 
 /**
- * Fetches all accounts belonging to the authenticated user.
- * Replaces the localStorage-based pattern for resolving the active cuentaId.
+ * Fetches the first page (up to 50) of accounts belonging to the authenticated
+ * user. The `select` transform unwraps the PagedResponse so consumers receive
+ * a plain CuentaResponse[] — no call-site changes required.
  */
 export function useMisCuentas() {
   return useQuery({
     queryKey: cuentaKeys.misCuentas(),
-    queryFn: getMisCuentas,
+    queryFn: () => getMisCuentas(),
+    select: (response): CuentaResponse[] => {
+      // Happy path: interceptor fired and wrapped the body into PagedResponse.
+      if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+        return response.data;
+      }
+      // Fallback: interceptor did not fire (X-Pagination header absent or failed to parse),
+      // response.data came back as the raw CuentaResponse[] array.
+      const raw = response as unknown;
+      return Array.isArray(raw) ? (raw as CuentaResponse[]) : [];
+    },
   });
 }
 

@@ -244,7 +244,7 @@ export default function DashboardPage() {
   }, [cuentas, cuentaActivaId]);
 
   const cuentaActiva = cuentas?.find((c) => c.id === cuentaActivaId);
-  const noAccount    = !isLoading && (!cuentas || cuentas.length === 0);
+  const noAccount    = !isLoading && !isError && (!cuentas || cuentas.length === 0);
 
   if (noAccount) {
     return (

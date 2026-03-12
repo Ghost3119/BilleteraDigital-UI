@@ -3,11 +3,22 @@ import type { CuentaResponse, SaldoResponse, TransaccionDto } from '../types/cue
 import type { PagedResponse } from '../../../types/api.types';
 
 /**
- * Devuelve todas las cuentas del usuario autenticado.
- * GET /api/v1/Cuentas/mias
+ * Devuelve una página de cuentas del usuario autenticado.
+ * GET /api/v1/Cuentas/mias?PageNumber=1&PageSize=50
+ *
+ * The Axios interceptor wraps the items array + X-Pagination header into
+ * PagedResponse<CuentaResponse> automatically.
+ *
+ * PageSize=50 is intentionally generous: a user will realistically have
+ * far fewer accounts, so a single page always loads the full list.
  */
-export async function getMisCuentas(): Promise<CuentaResponse[]> {
-  const res = await apiClient.get<CuentaResponse[]>('/Cuentas/mias');
+export async function getMisCuentas(
+  pageNumber = 1,
+  pageSize = 50,
+): Promise<PagedResponse<CuentaResponse>> {
+  const res = await apiClient.get<PagedResponse<CuentaResponse>>('/Cuentas/mias', {
+    params: { pageNumber, pageSize },
+  });
   return res.data;
 }
 

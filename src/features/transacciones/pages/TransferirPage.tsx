@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransferencia } from '../../transacciones/hooks/useTransferencia';
 import { useMisCuentas } from '../../cuentas/hooks/useCuenta';
+import type { CuentaResponse } from '../../cuentas/types/cuentas.types';
 import { parseApiError } from '../../../utils/parseApiError';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
 import InputField from '../../../components/ui/InputField';
 import AlertBanner from '../../../components/ui/AlertBanner';
 import PageHeader from '../../../components/ui/PageHeader';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatMoney(amount: number): string {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+function maskNumeroCuenta(n: number): string {
+  return `****${n.toString().slice(-4)}`;
+}
 
 // ── Step type ─────────────────────────────────────────────────────────────────
 
@@ -17,7 +32,7 @@ type Step = 'destinatario' | 'monto' | 'confirmar' | 'exito';
 
 function StepIndicator({ step }: { step: Step }) {
   const steps: Step[] = ['destinatario', 'monto', 'confirmar'];
-  const labels = ['Destinatario', 'Monto', 'Confirmar'];
+  const labels = ['Origen', 'Monto', 'Confirmar'];
   const current = steps.indexOf(step);
 
   return (
@@ -50,12 +65,81 @@ function StepIndicator({ step }: { step: Step }) {
   );
 }
 
+// ── CuentaOrigenSelector ──────────────────────────────────────────────────────
+
+function CuentaOrigenSelector({
+  cuentas,
+  selectedId,
+  onSelect,
+}: {
+  cuentas: CuentaResponse[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {cuentas.map((c) => {
+        const isSelected = c.id === selectedId;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelect(c.id)}
+            className={[
+              'w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition-all duration-150',
+              isSelected
+                ? 'border-[#1A7A4A] bg-[#1A7A4A]/5'
+                : 'border-gray-200 bg-white hover:border-[#1A7A4A]/40',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Selection indicator */}
+              <div className={[
+                'w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all',
+                isSelected ? 'border-[#1A7A4A]' : 'border-gray-300',
+              ].join(' ')}>
+                {isSelected && (
+                  <div className="w-2 h-2 rounded-full bg-[#1A7A4A]" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className={['text-sm font-semibold truncate', isSelected ? 'text-[#1A7A4A]' : 'text-gray-800'].join(' ')}>
+                  {c.nombreTitular}
+                </p>
+                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                  Cuenta {maskNumeroCuenta(c.numeroCuenta)}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0 text-right ml-3">
+              <p className={['text-sm font-bold', isSelected ? 'text-[#1A7A4A]' : 'text-gray-700'].join(' ')}>
+                {formatMoney(c.saldo)}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Saldo disponible</p>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── TransferirPage ────────────────────────────────────────────────────────────
 
 export default function TransferirPage() {
   const navigate = useNavigate();
-  const { data: cuentas } = useMisCuentas();
-  const cuentaOrigenId = cuentas?.[0]?.id ?? '';
+  const { data: cuentas, isLoading: cuentasLoading } = useMisCuentas();
+
+  // ── Task 1: Source account state — defaults to first account once loaded ──
+  const [cuentaOrigenId, setCuentaOrigenId] = useState('');
+
+  useEffect(() => {
+    if (cuentas && cuentas.length > 0 && !cuentaOrigenId) {
+      setCuentaOrigenId(cuentas[0].id);
+    }
+  }, [cuentas, cuentaOrigenId]);
+
+  const cuentaOrigen = cuentas?.find((c) => c.id === cuentaOrigenId);
 
   const [step, setStep] = useState<Step>('destinatario');
 
@@ -112,6 +196,7 @@ export default function TransferirPage() {
     if (validateMonto()) setStep('confirmar');
   }
 
+  // ── Task 3: cuentaOrigenId from state flows into the payload ────────────────
   function handleConfirmar() {
     reset();
     transferir(
@@ -140,12 +225,12 @@ export default function TransferirPage() {
           <p className="text-sm text-gray-500 mt-1">
             Transferiste{' '}
             <span className="font-semibold text-gray-800">
-              {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(resultado.monto)}
+              {formatMoney(resultado.monto)}
             </span>
           </p>
           <p className="text-xs text-gray-400 mt-1">
             Saldo restante:{' '}
-            {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(resultado.saldoOrigenResultante)}
+            {formatMoney(resultado.saldoOrigenResultante)}
           </p>
         </div>
         <Button variant="primary" fullWidth onClick={() => navigate('/inicio')}>
@@ -176,22 +261,58 @@ export default function TransferirPage() {
       <StepIndicator step={step} />
 
       <div className="px-4">
-        {/* ── Step 1: Destinatario ─────────────────────────────────────────── */}
+        {/* ── Step 1: Destinatario + Cuenta origen ────────────────────────── */}
         {step === 'destinatario' && (
-          <Card padding="md" className="flex flex-col gap-4">
-            <div>
-              <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién deseas transferir?</p>
-              <p className="text-xs text-gray-400">Ingresa el email o número de cuenta del destinatario</p>
+          <Card padding="md" className="flex flex-col gap-5">
+
+            {/* ── Cuenta de origen ─────────────────────────────────────── */}
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-base font-semibold text-gray-800 mb-0.5">Cuenta de origen</p>
+                <p className="text-xs text-gray-400">Selecciona la cuenta desde la que deseas enviar</p>
+              </div>
+              {cuentasLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : cuentas && cuentas.length > 0 ? (
+                <CuentaOrigenSelector
+                  cuentas={cuentas}
+                  selectedId={cuentaOrigenId}
+                  onSelect={setCuentaOrigenId}
+                />
+              ) : (
+                <AlertBanner variant="error" message="No tienes cuentas disponibles para realizar transferencias." />
+              )}
             </div>
-            <InputField
-              label="Email o número de cuenta"
-              type="text"
-              placeholder="usuario@email.com o 1234567890"
-              value={destinatario}
-              onChange={(e) => { setDestinatario(e.target.value); if (destinoError) setDestinoError(''); }}
-              error={destinoError}
-            />
-            <Button variant="primary" fullWidth onClick={handleNextDestino}>
+
+            {/* ── Divider ──────────────────────────────────────────────── */}
+            <div className="border-t border-gray-100" />
+
+            {/* ── Task 4: Destinatario ─────────────────────────────────── */}
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-base font-semibold text-gray-800 mb-0.5">¿A quién deseas enviar?</p>
+                <p className="text-xs text-gray-400">Ingresa el email o número de cuenta del destinatario</p>
+              </div>
+              <InputField
+                label="Email o número de cuenta"
+                type="text"
+                placeholder="usuario@email.com o 1234567890"
+                value={destinatario}
+                onChange={(e) => { setDestinatario(e.target.value); if (destinoError) setDestinoError(''); }}
+                error={destinoError}
+              />
+            </div>
+
+            <Button
+              variant="primary"
+              fullWidth
+              disabled={!cuentaOrigenId}
+              onClick={handleNextDestino}
+            >
               Continuar
             </Button>
           </Card>
@@ -245,10 +366,16 @@ export default function TransferirPage() {
             {/* Summary rows */}
             <div className="flex flex-col gap-3 bg-gray-50 rounded-xl p-4">
               {[
+                {
+                  label: 'Desde',
+                  value: cuentaOrigen
+                    ? `${cuentaOrigen.nombreTitular} — Cuenta ${maskNumeroCuenta(cuentaOrigen.numeroCuenta)}`
+                    : cuentaOrigenId,
+                },
                 { label: 'Destinatario', value: destinatario },
                 {
                   label: 'Monto',
-                   value: new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(parseFloat(monto)),
+                  value: formatMoney(parseFloat(monto)),
                 },
                 { label: 'Descripción', value: descripcion.trim() || 'Transferencia' },
               ].map((row) => (
