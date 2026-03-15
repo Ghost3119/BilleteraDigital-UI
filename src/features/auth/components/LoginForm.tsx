@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLogin } from '../hooks/useLogin';
 import InputField from '../../../components/ui/InputField';
 import PasswordInput from '../../../components/ui/PasswordInput';
@@ -36,6 +36,10 @@ function BilleteraLogo() {
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Show a success banner when redirected here after successful registration
+  const registrado = (location.state as { registrado?: boolean } | null)?.registrado === true;
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -87,6 +91,14 @@ export default function LoginForm() {
       <BilleteraLogo />
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+
+        {/* Registration success banner */}
+        {registrado && (
+          <AlertBanner
+            variant="success"
+            message="¡Cuenta creada con éxito! Inicia sesión para continuar."
+          />
+        )}
 
         {/* API error banner */}
         {isError && <AlertBanner variant="error" message={parseLoginError(error)} />}

@@ -2,6 +2,11 @@
  * Shared API types used across the entire application.
  * Co-located here so both the Axios client and feature services
  * can import from a single source of truth.
+ *
+ * Feature-specific request/response types live in their own feature slice:
+ *   auth        → src/features/auth/types/auth.types.ts
+ *   cuentas     → src/features/cuentas/types/cuentas.types.ts
+ *   transferencias → src/features/transacciones/types/transferencias.types.ts
  */
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -63,12 +68,9 @@ export interface TransaccionDto {
   direccion: 'Ingreso' | 'Egreso';
 }
 
-export interface RealizarTransferenciaRequest {
-  cuentaOrigenId: string;
-  cuentaDestinoId: string;
-  monto: number;
-  descripcion: string;
-}
+// NOTE: RealizarTransferenciaRequest is owned by the transferencias feature slice.
+//       Use: import type { RealizarTransferenciaRequest } from
+//              '../features/transacciones/types/transferencias.types';
 
 export interface TransferenciaResponse {
   transaccionId: string;
