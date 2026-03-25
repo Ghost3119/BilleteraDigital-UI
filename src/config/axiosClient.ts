@@ -6,7 +6,7 @@ import type { PaginationMeta, PagedResponse } from '../types/api.types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const API_BASE_URL = 'http://localhost:5112/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5112/api/v1';
 export const ACCESS_TOKEN_KEY = 'billetera_access_token';
 export const REFRESH_TOKEN_KEY = 'billetera_refresh_token';
 export const CUENTA_ID_KEY = 'billetera_cuenta_id';
