@@ -39,6 +39,25 @@ const tabs = [
       </svg>
     ),
   },
+  {
+  to: '/soporte',
+  label: 'Soporte',
+  icon: (active: boolean) => (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="w-6 h-6"
+      stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.7}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M18 10c0-3.866-3.582-7-8-7S2 6.134 2 10c0 3.07 2.39 5.66 5.7 6.59.3.08.5.36.5.67V20l2.3-1.38c.2-.12.44-.14.66-.06.86.28 1.78.44 2.74.44 4.418 0 8-3.134 8-7z"
+      />
+    </svg>
+    ),
+  },
 ];
 
 // ── BottomNav ─────────────────────────────────────────────────────────────────

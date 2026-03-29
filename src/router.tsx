@@ -7,6 +7,8 @@ import DashboardPage from './features/cuentas/pages/DashboardPage';
 import TransferirPage from './features/transacciones/pages/TransferirPage';
 import HistorialPage from './features/transacciones/pages/HistorialPage';
 import PerfilPage from './features/perfil/pages/PerfilPage';
+import SoportePage from './features/soport/pages/SoportePage';
+
 
 // ── Placeholder stubs — used only for routes not yet implemented ──────────────
 
@@ -55,6 +57,7 @@ const router = createBrowserRouter([
       { path: 'transferir', element: <TransferirPage /> },
       { path: 'historial',  element: <HistorialPage /> },
       { path: 'perfil',     element: <PerfilPage /> },
+      { path: 'soporte',     element: <SoportePage /> },
     ],
   },
 
