@@ -7,7 +7,7 @@ import DashboardPage from './features/cuentas/pages/DashboardPage';
 import TransferirPage from './features/transacciones/pages/TransferirPage';
 import HistorialPage from './features/transacciones/pages/HistorialPage';
 import PerfilPage from './features/perfil/pages/PerfilPage';
-
+import NotFoundPage from './pages/NotFoundPage';
 // ── Placeholder stubs — used only for routes not yet implemented ──────────────
 
 const Placeholder = ({ name }: { name: string }) => (
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
   },
 
   // ── Fallback ─────────────────────────────────────────────────────────────
-  { path: '*', element: <Navigate to="/login" replace /> },
+  { path: '*', element: <NotFoundPage /> },
 ]);
 
 export default router;
