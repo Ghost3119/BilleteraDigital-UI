@@ -5,10 +5,11 @@ export default function NotFoundPage() {
 
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Oops, página no encontrada</h1>
+      <h1>Página no encontrada</h1>
+      <p>La página que buscas no existe o fue eliminada.</p>
 
       <button onClick={() => navigate("/inicio")}>
-        Volver al Inicio
+        Regresar al inicio
       </button>
     </div>
   );
